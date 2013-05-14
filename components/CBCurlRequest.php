@@ -710,7 +710,7 @@ class CBCurlRequest
 		}
 
 		// Stop using this _log (so subsequent calls are forced to use a new one)
-		$this->logger = null;
+//		$this->logger = null;
 
 		return $this->responseBody;
 	}
