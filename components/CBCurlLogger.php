@@ -81,91 +81,91 @@ class CBCurlLogger
 	 *
 	 * @var integer
 	 */
-	protected $responseHttpCode = null;
+	public $responseHttpCode = null;
 
 	/**
 	 * Application fatal error family. Defaults to undefined.
 	 *
 	 * @var integer
 	 */
-	protected $applicationErrorCode = null;
+	public $applicationErrorCode = null;
 
 	/**
 	 * Error string (null means success).
 	 *
 	 * @var boolean
 	 */
-	protected $errorText = null;
+	public $errorText = null;
 
 	/**
 	 * Service full url.
 	 *
 	 * @var string
 	 */
-	protected $serviceUrl = null;
+	public $serviceUrl = null;
 
 	/**
 	 * Microsecond stamp of log initialization (roughly equal to request execution).
 	 *
 	 * @var float 
 	 */
-	protected $microStart = null;
+	public $microStart = null;
 
 	/**
 	 * Execution time in seconds.
 	 *
 	 * @var integer
 	 */
-	protected $executionSeconds = null;
+	public $executionSeconds = null;
 
 	/**
 	 * Extensive request details (for debugging).
 	 *
 	 * @var string
 	 */
-	protected $requestInfo = null;
+	public $requestInfo = null;
 
 	/**
 	 * Request post parameters.
 	 *
 	 * @var array
 	 */
-	protected $requestPost = null;
+	public $requestPost = null;
 
 	/**
 	 * Request get parameters.
 	 *
 	 * @var array
 	 */
-	protected $requestGet = null;
+	public $requestGet = null;
 
 	/**
 	 * Request json body.
 	 *
 	 * @var string
 	 */
-	protected $requestJson = null;
+	public $requestJson = null;
 
 	/**
 	 * Extensive request details (for debugging).
 	 *
 	 * @var string
 	 */
-	protected $responseBody = null;
+	public $responseBody = null;
 
 	/**
 	 * Full list of headers returned by the server.
 	 *
 	 * @var array
 	 */
-	protected $responseHeaders = null;
+	public $responseHeaders = null;
 
 	/**
 	 * Verbose CURL info about the request.
 	 *
 	 * @var string
 	 */
-	protected $curlVerboseInfo = null;
+	public $curlVerboseInfo = null;
 
 	/**
 	 * Raw/json request parameters/body.
