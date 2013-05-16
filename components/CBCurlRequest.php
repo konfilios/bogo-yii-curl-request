@@ -125,6 +125,13 @@ class CBCurlRequest
 	private $responseHeaders = array();
 
 	/**
+	 * Cookies found in the response after curl_exec.
+	 *
+	 * @var string[]
+	 */
+	private $responseCookies = array();
+
+	/**
 	 * Incoming response details.
 	 *
 	 * @var array
@@ -363,6 +370,42 @@ class CBCurlRequest
 	}
 
 	/**
+	 * Get a specific response cookie attributes or all (if no $cookieName is given).
+	 *
+	 * @param string $cookieName Cookie name.
+	 *
+	 * @return array
+	 */
+	public function getResponseCookieAttributes($cookieName = '')
+	{
+		if (empty($cookieName)) {
+			return $this->responseCookies;
+		} else {
+			return isset($this->responseCookies[$cookieName]) ? $this->responseCookies[$cookieName] : array();
+		}
+	}
+
+	/**
+	 * Get a specific response cookie value or all (if no $cookieName is given).
+	 *
+	 * @param string $cookieName Cookie name.
+	 *
+	 * @return mixed
+	 */
+	public function getResponseCookie($cookieName)
+	{
+		if (empty($cookieName)) {
+			$cookieValues = array();
+			foreach ($this->responseCookies as $cookieName=>$cookieAttributes) {
+				$cookieValues[$cookieName] = $cookieAttributes['value'];
+			}
+			return $cookieValues;
+		} else {
+			return isset($this->responseCookies[$cookieName]['value']) ? $this->responseCookies[$cookieName]['value'] : null;
+		}
+	}
+
+	/**
 	 * Prepare and return body for request. Set appropriate headers.
 	 *
 	 * @return mixed
@@ -498,7 +541,47 @@ class CBCurlRequest
 			$field = strtolower(trim(substr($headerLine, 0, $pos)));
 			$value = trim(substr($headerLine, $pos + 1));
 			$this->responseHeaders[$field] = $value;
+
+			if (($field == 'setCookie') && !empty($value)) {
+				// Response cookie
+				$rawCookieAttributes = explode(';', $value);
+
+				$cookieName = null;
+				$cookieAttributes = array();
+				foreach ($rawCookieAttributes as $rawCookieAttribute) {
+					// Explode into parts
+					$rawCookieAttributeParts = explode('=', trim($rawCookieAttribute));
+
+					if (empty($rawCookieAttributeParts)) {
+						// Nothing in there
+						continue;
+					}
+
+					// Trim first
+					$cookieAttributeName = trim($rawCookieAttributeParts[0]);
+					if (isset($rawCookieAttributeParts[1])) {
+						// Attribute-value pair, this is the value
+						$cookieAttributeValue = trim($rawCookieAttributeParts[1]);
+					} else {
+						// Flag, its value is true
+						$cookieAttributeValue = true;
+					}
+
+					if (empty($cookieAttributes)) {
+						// This is the first cookie attribute, i.e. the cookieName=cookieValue pair
+						$cookieName = $cookieAttributeName;
+						$cookieAttributes['value'] = $cookieAttributeValue;
+					} else {
+						$cookieAttributes[$cookieAttributeName] = $cookieAttributeValue;
+					}
+				}
+
+				
+			}
+		} else {
+			error_log('CBCurlRequest ignored response header: '.$headerLine);
 		}
+
 		return strlen($headerLine);
 	}
 
