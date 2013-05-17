@@ -392,7 +392,7 @@ class CBCurlRequest
 	 *
 	 * @return mixed
 	 */
-	public function getResponseCookie($cookieName)
+	public function getResponseCookie($cookieName = '')
 	{
 		if (empty($cookieName)) {
 			$cookieValues = array();
@@ -542,7 +542,7 @@ class CBCurlRequest
 			$value = trim(substr($headerLine, $pos + 1));
 			$this->responseHeaders[$field] = $value;
 
-			if (($field == 'setCookie') && !empty($value)) {
+			if (($field == 'set-cookie') && !empty($value)) {
 				// Response cookie
 				$rawCookieAttributes = explode(';', $value);
 
@@ -576,10 +576,8 @@ class CBCurlRequest
 					}
 				}
 
-				
+				$this->responseCookies[$cookieName] = $cookieAttributes;
 			}
-		} else {
-			error_log('CBCurlRequest ignored response header: '.$headerLine);
 		}
 
 		return strlen($headerLine);
@@ -637,7 +635,6 @@ class CBCurlRequest
 		if ($this->auth) {
 			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_setopt($ch, CURLOPT_USERPWD, $this->auth);
-			print($this->auth);
 		}
 
 		// Add custom headers
@@ -770,9 +767,28 @@ class CBCurlRequest
 					if ($this->logger) {
 						$error = 'Response body does not have proper JSON format';
 
-						$jsonError = Json::getLastErrorString();
-						if ($jsonError) {
-							$error .= ' ('.$jsonError.')';
+						$jsonErrorCode = json_last_error();
+
+						switch ($jsonErrorCode) {
+							case JSON_ERROR_NONE:
+								$jsonErrorMessage = false;
+							case JSON_ERROR_DEPTH:
+								$jsonErrorMessage =  'Maximum stack depth exceeded';
+							case JSON_ERROR_STATE_MISMATCH:
+								$jsonErrorMessage =  'Invalid or malformed JSON';
+							case JSON_ERROR_CTRL_CHAR:
+								$jsonErrorMessage =  'Control character error, possibly incorrectly encoded';
+							case JSON_ERROR_SYNTAX:
+								$jsonErrorMessage =  'Syntax error';
+							case JSON_ERROR_UTF8:
+								$jsonErrorMessage =  'Malformed UTF-8 characters, possibly incorrectly encoded';
+							default:
+								$jsonErrorMessage =  'Unsupported error code '.$jsonErrorCode;
+						}
+
+
+						if ($jsonErrorMessage) {
+							$error .= ' ('.$jsonErrorMessage.')';
 						}
 
 						$this->logger->onError(CBCurlLogger::ERROR_MALFORMED_RESPONSE, $error);
