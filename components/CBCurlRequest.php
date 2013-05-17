@@ -532,7 +532,7 @@ class CBCurlRequest
 						$cookieAttributeValue = true;
 					}
 
-					if (empty($cookieAttributes)) {
+					if ($cookieName === null) {
 						// This is the first cookie attribute, i.e. the cookieName=cookieValue pair
 						$cookieName = $cookieAttributeName;
 						$cookieValue = $cookieAttributeValue;
