@@ -31,28 +31,7 @@ class CBCurlRequest
 	 *
 	 * @var CBCurlLogger
 	 */
-	private $logger = null;
-
-	/**
-	 * Array with raw, xml and json data.
-	 *
-	 * @var array
-	 */
-	protected $requestData = array();
-
-	/**
-	 * Request xml body (optional). Used only for POST requests.
-	 *
-	 * @var string
-	 */
-	protected $requestXmlBody = null;
-
-	/**
-	 * Request json body (optional). Used only for POST requests.
-	 *
-	 * @var string
-	 */
-	protected $requestJsonBody = null;
+	protected $logger = null;
 
 	/**
 	 * Files to be sent.
@@ -74,13 +53,6 @@ class CBCurlRequest
 	 * @var array
 	 */
 	protected $requestPostParams = array();
-
-	/**
-	 * Key-value pair of headers to be sent.
-	 *
-	 * @var string
-	 */
-	protected $requestHeaders = array();
 
 	/**
 	 * HTTP authorization.
@@ -118,32 +90,11 @@ class CBCurlRequest
 	protected $lastVerb = '';
 
 	/**
-	 * Headers found in the response after curl_exec.
-	 *
-	 * @var string[]
-	 */
-	private $responseHeaders = array();
-
-	/**
-	 * Cookies found in the response after curl_exec.
-	 *
-	 * @var string[]
-	 */
-	private $responseCookies = array();
-
-	/**
 	 * Incoming response details.
 	 *
 	 * @var array
 	 */
 	private $responseDetails = array();
-
-	/**
-	 * HTTP response body.
-	 *
-	 * @var string
-	 */
-	private $responseBody = null;
 
 	/**
 	 * Verbose CURL info about the request.
@@ -152,6 +103,19 @@ class CBCurlRequest
 	 */
 	protected $curlVerboseInfo = null;
 
+	/**
+	 * Request message.
+	 *
+	 * @var CBCurlMessage
+	 */
+	protected $requestMessage = null;
+
+	/**
+	 * Response message.
+	 *
+	 * @var CBCurlMessage
+	 */
+	protected $responseMessage = null;
 	/**
 	 * Set outgoing http data encoding
 	 *
@@ -197,6 +161,12 @@ class CBCurlRequest
 	  }
 	 */
 
+	public function __construct()
+	{
+		$this->requestMessage = new CBCurlMessage();
+		$this->responseMessage = new CBCurlMessage();
+	}
+
 	/**
 	 * Reset all request and response data.
 	 *
@@ -204,13 +174,27 @@ class CBCurlRequest
 	 */
 	public function reset()
 	{
-		$this->requestXmlBody = null;
-		$this->requestJsonBody = null;
 		$this->requestPostParams = array();
 		$this->requestGetParams = array();
-		$this->requestHeaders = array();
 		$this->requestFiles = array();
 		$this->responseDetails = array();
+		$this->requestMessage->reset();
+//		$this->responseMessage->reset();
+
+		return $this;
+	}
+
+	/**
+	 * Add a request cookie.
+	 *
+	 * @param string $cookieName Name of request header.
+	 * @param string $cookieValue Value of request header.
+	 *
+	 * @return Rest
+	 */
+	public function setRequestCookie($cookieName, $cookieValue)
+	{
+		$this->requestMessage->setCookie($cookieName, $cookieValue);
 
 		return $this;
 	}
@@ -225,7 +209,7 @@ class CBCurlRequest
 	 */
 	public function setRequestHeader($field, $value = null)
 	{
-		$this->requestHeaders[$field] = $value;
+		$this->requestMessage->setHeader($field, $value);
 
 		return $this;
 	}
@@ -314,7 +298,7 @@ class CBCurlRequest
 	public function setRequestJsonBody($data)
 	{
 		$this->setRequestHeader('Content-type', self::$contentTypes[self::CONTENT_JSON]);
-		$this->requestJsonBody = is_string($data) ? $data : json_encode($data);
+		$this->requestMessage->rawBody = is_string($data) ? $data : json_encode($data);
 
 		return $this;
 	}
@@ -329,7 +313,7 @@ class CBCurlRequest
 	public function setRequestXml($data)
 	{
 		$this->setRequestHeader('Content-type', self::$contentTypes[self::CONTENT_XML]);
-		$this->requestXmlBody = $data;
+		$this->requestMessage->rawBody = $data;
 
 		return $this;
 	}
@@ -355,18 +339,13 @@ class CBCurlRequest
 	/**
 	 * Get a specific response header or all (if no $field is given).
 	 *
-	 * @param string $field Header name.
+	 * @param string $headerName Header name.
 	 *
 	 * @return mixed
 	 */
-	public function getResponseHeader($field = '')
+	public function getResponseHeader($headerName = '')
 	{
-		if (empty($field)) {
-			return $this->responseHeaders;
-		} else {
-			$field = strtolower($field);
-			return isset($this->responseHeaders[$field]) ? $this->responseHeaders[$field] : null;
-		}
+		return $this->responseMessage->getHeader($headerName);
 	}
 
 	/**
@@ -378,11 +357,7 @@ class CBCurlRequest
 	 */
 	public function getResponseCookieAttributes($cookieName = '')
 	{
-		if (empty($cookieName)) {
-			return $this->responseCookies;
-		} else {
-			return isset($this->responseCookies[$cookieName]) ? $this->responseCookies[$cookieName] : array();
-		}
+		return $this->responseMessage->getCookieAttributes($cookieName);
 	}
 
 	/**
@@ -394,15 +369,7 @@ class CBCurlRequest
 	 */
 	public function getResponseCookie($cookieName = '')
 	{
-		if (empty($cookieName)) {
-			$cookieValues = array();
-			foreach ($this->responseCookies as $cookieName=>$cookieAttributes) {
-				$cookieValues[$cookieName] = $cookieAttributes['value'];
-			}
-			return $cookieValues;
-		} else {
-			return isset($this->responseCookies[$cookieName]['value']) ? $this->responseCookies[$cookieName]['value'] : null;
-		}
+		return $this->responseMessage->getCookie($cookieName);
 	}
 
 	/**
@@ -412,12 +379,9 @@ class CBCurlRequest
 	 */
 	protected function compileRequestBody()
 	{
-		if (!empty($this->requestJsonBody)) {
-			// User JSON body, Content-type: application/json
-			return $this->requestJsonBody;
-		} else if (!empty($this->requestXmlBody)) {
-			// Set XML body, Content-Type: application/xhtml+xmlcompileRequestBody
-			return $this->requestXmlBody;
+		if (!empty($this->requestMessage->rawBody)) {
+			// Raw body
+			return $this->requestMessage->rawBody;
 		} else {
 			// Set post body. Maybe we need files as well
 			if (empty($this->requestFiles)) {
@@ -540,13 +504,14 @@ class CBCurlRequest
 		if ($pos !== false) {
 			$field = strtolower(trim(substr($headerLine, 0, $pos)));
 			$value = trim(substr($headerLine, $pos + 1));
-			$this->responseHeaders[$field] = $value;
+			$this->responseMessage->setHeader($field, $value);
 
 			if (($field == 'set-cookie') && !empty($value)) {
 				// Response cookie
 				$rawCookieAttributes = explode(';', $value);
 
 				$cookieName = null;
+				$cookieValue = null;
 				$cookieAttributes = array();
 				foreach ($rawCookieAttributes as $rawCookieAttribute) {
 					// Explode into parts
@@ -570,13 +535,14 @@ class CBCurlRequest
 					if (empty($cookieAttributes)) {
 						// This is the first cookie attribute, i.e. the cookieName=cookieValue pair
 						$cookieName = $cookieAttributeName;
-						$cookieAttributes['value'] = $cookieAttributeValue;
+						$cookieValue = $cookieAttributeValue;
 					} else {
 						$cookieAttributes[$cookieAttributeName] = $cookieAttributeValue;
 					}
 				}
 
-				$this->responseCookies[$cookieName] = $cookieAttributes;
+				// Save the cookie
+				$this->responseMessage->setCookie($cookieName, $cookieValue, $cookieAttributes);
 			}
 		}
 
@@ -595,10 +561,10 @@ class CBCurlRequest
 	 */
 	private function parseResponseBody($ch, $responseBodyChunk)
 	{
-		if ($this->responseBody === null) {
-			$this->responseBody = $responseBodyChunk;
+		if ($this->responseMessage->rawBody === null) {
+			$this->responseMessage->rawBody = $responseBodyChunk;
 		} else {
-			$this->responseBody .= $responseBodyChunk;
+			$this->responseMessage->rawBody .= $responseBodyChunk;
 		}
 
 		return strlen($responseBodyChunk);
@@ -629,21 +595,32 @@ class CBCurlRequest
 		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this, 'parseResponseBody'));
 		$this->lastUrl = $url;
 
-		$this->responseHeaders = array();
-
 		// Set authorization flags
 		if ($this->auth) {
 			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_setopt($ch, CURLOPT_USERPWD, $this->auth);
 		}
 
+		$requestHeaders = array();
+
 		// Add custom headers
-		if ($this->requestHeaders) {
-			$headers = array();
-			foreach ($this->requestHeaders as $field => $value) {
-				$headers[] = $field.': '.$value;
+		if (!empty($this->requestMessage->headers)) {
+			foreach ($this->requestMessage->headers as $field => $value) {
+				$requestHeaders[] = $field.': '.$value;
 			}
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		}
+
+		// Add cookie header
+		if (!empty($this->requestMessage->cookies)) {
+			$cookieList = '';
+			foreach ($this->requestMessage->getCookie() as $cookieName=>$cookieValue) {
+				$cookieList .= ($cookieList ? '; ' : '').$cookieName.'='.$cookieValue;
+			}
+			$requestHeaders[] = 'Cookie: '.$cookieList;
+		}
+
+		if (!empty($requestHeaders)) {
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $requestHeaders);
 		}
 
 		if ($this->requestEncoding) {
@@ -669,7 +646,7 @@ class CBCurlRequest
 			$this->logger->setRequestInfo($this->lastUrl,
 					$this->requestGetParams,
 					$this->requestPostParams,
-					$this->requestJsonBody);
+					$this->requestMessage->rawBody);
 		}
 
 		if (defined('YII_DEBUG') && constant('YII_DEBUG')) {
@@ -687,7 +664,8 @@ class CBCurlRequest
 		}
 
 		// Initialize response body
-		$this->responseBody = null;
+		$this->responseMessage->reset();
+
 		// Execute the HTTP request
 		$curlReturnValue = curl_exec($ch);
 
@@ -704,7 +682,7 @@ class CBCurlRequest
 		}
 
 		// Network error
-		if ($this->responseBody === null) {
+		if ($this->responseMessage->rawBody === null) {
 			// WRITEFUNCTION did not return any content. Probably an error
 			if ($curlReturnValue === false) {
 				$error = curl_error($ch);
@@ -734,12 +712,12 @@ class CBCurlRequest
 		if ($this->logger) {
 			// Log successful response information
 			$this->logger->setResponseInfo($this->responseDetails['http_code'],
-					$this->responseBody, $this->responseHeaders);
+					$this->responseMessage->rawBody, $this->responseMessage->headers);
 		}
 
 		// Network operation succeeded but way may have an HTTP error
 		if ($this->responseDetails['http_code'] >= 400) {
-			throw new Exception($this->responseBody, $this->responseDetails['http_code']);
+			throw new Exception($this->responseMessage->rawBody, $this->responseDetails['http_code']);
 		}
 
 		// Return content
@@ -747,22 +725,22 @@ class CBCurlRequest
 
 			// JSON
 			case self::CONTENT_JSON:
-				if (empty($this->responseBody)) {
+				if (empty($this->responseMessage->rawBody)) {
 					throw new Exception('CURL returned empty body');
 				}
 
 				switch ($returnFormat) {
 					case self::RETURN_OBJECT:
-						$this->responseBody = json_decode($this->responseBody, false);
+						$this->responseMessage->rawBody = json_decode($this->responseMessage->rawBody, false);
 						break;
 
 					//				case self::RETURN_ASSOC:
 					default:
-						$this->responseBody = json_decode($this->responseBody, true);
+						$this->responseMessage->rawBody = json_decode($this->responseMessage->rawBody, true);
 						break;
 				}
 
-				if (is_null($this->responseBody)) {
+				if (is_null($this->responseMessage->rawBody)) {
 					// When expecting JSON, empty responses are probably invalid
 					if ($this->logger) {
 						$error = 'Response body does not have proper JSON format';
@@ -798,10 +776,10 @@ class CBCurlRequest
 
 			// XML
 			case self::CONTENT_XML:
-				if (empty($this->responseBody)) {
+				if (empty($this->responseMessage->rawBody)) {
 					throw new Exception('CURL returned empty body');
 				}
-				$this->responseBody = simplexml_load_string($this->responseBody);
+				$this->responseMessage->rawBody = simplexml_load_string($this->responseMessage->rawBody);
 				break;
 
 			// Default (RAW)
@@ -811,7 +789,7 @@ class CBCurlRequest
 		// Stop using this _log (so subsequent calls are forced to use a new one)
 //		$this->logger = null;
 
-		return $this->responseBody;
+		return $this->responseMessage->rawBody;
 	}
 
 	/**
