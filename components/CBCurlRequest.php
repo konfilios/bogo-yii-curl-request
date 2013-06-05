@@ -200,6 +200,17 @@ class CBCurlRequest
 	}
 
 	/**
+	 * Get a specific request cookie value or all (if no $cookieName is given).
+	 *
+	 * @param string $cookieName Cookie name.
+	 * @return mixed
+	 */
+	public function getRequestCookie($cookieName = '')
+	{
+		return $this->requestMessage->getCookie($cookieName);
+	}
+
+	/**
 	 * Add a request header.
 	 *
 	 * @param string $field Name of request header.
