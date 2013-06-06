@@ -728,7 +728,8 @@ class CBCurlRequest
 
 		// Network operation succeeded but way may have an HTTP error
 		if ($this->responseDetails['http_code'] >= 400) {
-			throw new Exception($this->responseMessage->rawBody, $this->responseDetails['http_code']);
+
+			throw new Exception($this->responseMessage->rawBody ?: 'Server error '.$this->responseDetails['http_code'], $this->responseDetails['http_code']);
 		}
 
 		// Return content
