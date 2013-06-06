@@ -1,12 +1,12 @@
 <?php
 /**
- * HTTP Message (request & response).
+ * Base HTTP Message.
  *
  * @since 1.0
  * @package Components
  * @author Konstantinos Filios <konfilios@gmail.com>
  */
-class CBCurlMessage
+class CBHttpMessage
 {
 	/**
 	 * Body (payload).
@@ -34,8 +34,7 @@ class CBCurlMessage
 	 *
 	 * @param string $field Name of request header.
 	 * @param string $value Value of request header.
-	 *
-	 * @return Rest
+	 * @return CBHttpMessage
 	 */
 	public function setHeader($field, $value = null)
 	{
@@ -103,21 +102,81 @@ class CBCurlMessage
 	 * @param string $cookieName
 	 * @param string $cookieValue
 	 * @param array $cookieAttributes
+	 * @return CBHttpMessage
 	 */
 	public function setCookie($cookieName, $cookieValue, $cookieAttributes = array())
 	{
 		$cookieAttributes['value'] = $cookieValue;
 
 		$this->cookies[$cookieName] = $cookieAttributes;
+
+		return $this;
 	}
 
 	/**
-	 * Reset all properties.
+	 * Reset all internal variables.
+	 *
+	 * @return CBHttpMessage
 	 */
 	public function reset()
 	{
 		$this->cookies = array();
 		$this->headers = array();
 		$this->rawBody = null;
+
+		return $this;
+	}
+
+	/**
+	 * JSON decode body.
+	 *
+	 * @return mixed
+	 */
+	public function getBodyAsJson($returnAssoc = true)
+	{
+		$json = json_decode($this->responseMessage->rawBody, $returnAssoc);
+
+		if (!is_null($json)) {
+			return $json;
+		}
+
+		// When expecting JSON, empty responses are probably invalid
+		$error = 'Response body does not have proper JSON format';
+
+		$jsonErrorCode = json_last_error();
+
+		switch ($jsonErrorCode) {
+			case JSON_ERROR_NONE:
+				$jsonErrorMessage = false;
+			case JSON_ERROR_DEPTH:
+				$jsonErrorMessage =  'Maximum stack depth exceeded';
+			case JSON_ERROR_STATE_MISMATCH:
+				$jsonErrorMessage =  'Invalid or malformed JSON';
+			case JSON_ERROR_CTRL_CHAR:
+				$jsonErrorMessage =  'Control character error, possibly incorrectly encoded';
+			case JSON_ERROR_SYNTAX:
+				$jsonErrorMessage =  'Syntax error';
+			case JSON_ERROR_UTF8:
+				$jsonErrorMessage =  'Malformed UTF-8 characters, possibly incorrectly encoded';
+			default:
+				$jsonErrorMessage =  'Unsupported error code '.$jsonErrorCode;
+		}
+
+
+		if ($jsonErrorMessage) {
+			$error .= ' ('.$jsonErrorMessage.')';
+		}
+
+		throw new Exception($error, $jsonErrorCode);
+	}
+
+	/**
+	 * XML representation of body.
+	 *
+	 * @return SimpleXMLElement
+	 */
+	public function getBodyAsXml()
+	{
+		return simplexml_load_string($this->responseMessage->rawBody);
 	}
 }

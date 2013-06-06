@@ -77,13 +77,6 @@ class CBCurlLogger
 	protected $curlErrorCode = 0;
 
 	/**
-	 * Reponse HTTP Code. Defaults to undefined.
-	 *
-	 * @var integer
-	 */
-	public $responseHttpCode = null;
-
-	/**
 	 * Application fatal error family. Defaults to undefined.
 	 *
 	 * @var integer
@@ -96,13 +89,6 @@ class CBCurlLogger
 	 * @var boolean
 	 */
 	public $errorText = null;
-
-	/**
-	 * Service full url.
-	 *
-	 * @var string
-	 */
-	public $serviceUrl = null;
 
 	/**
 	 * Microsecond stamp of log initialization (roughly equal to request execution).
@@ -119,48 +105,6 @@ class CBCurlLogger
 	public $executionSeconds = null;
 
 	/**
-	 * Extensive request details (for debugging).
-	 *
-	 * @var string
-	 */
-	public $requestInfo = null;
-
-	/**
-	 * Request post parameters.
-	 *
-	 * @var array
-	 */
-	public $requestPost = null;
-
-	/**
-	 * Request get parameters.
-	 *
-	 * @var array
-	 */
-	public $requestGet = null;
-
-	/**
-	 * Request json body.
-	 *
-	 * @var string
-	 */
-	public $requestJson = null;
-
-	/**
-	 * Extensive request details (for debugging).
-	 *
-	 * @var string
-	 */
-	public $responseBody = null;
-
-	/**
-	 * Full list of headers returned by the server.
-	 *
-	 * @var array
-	 */
-	public $responseHeaders = null;
-
-	/**
 	 * Verbose CURL info about the request.
 	 *
 	 * @var string
@@ -168,55 +112,52 @@ class CBCurlLogger
 	public $curlVerboseInfo = null;
 
 	/**
-	 * Raw/json request parameters/body.
-	 * 
-	 * @param string $url  Target URL.
-	 * @param array  $get  Get parameters.
-	 * @param array  $post Post parameters.
-	 * @param string $json JSON object.
+	 * Request message.
 	 *
-	 * @return void
+	 * @var CBHttpMessageRequest
 	 */
-	public function setRequestInfo($url, array $get, array $post, $json)
+	public $requestMessage = null;
+	/**
+	 * Response message.
+	 *
+	 * @var CBHttpMessageResponse
+	 */
+	public $responseMessage = null;
+
+	/**
+	 * Keep request message.
+	 *
+	 * @param CBHttpMessageRequest $message
+	 */
+	public function setRequestInfo(CBHttpMessageRequest $message)
+	{
+		$this->requestMessage = $message;
+		$this->startTimer();
+	}
+
+	/**
+	 * Keep response message.
+	 *
+	 * @param CBHttpMessageResponse $message
+	 */
+	public function setResponseInfo(CBHttpMessageResponse $message)
+	{
+		$this->stopTimer();
+		$this->responseMessage = $message;
+	}
+
+	private function startTimer()
 	{
 		// Keep statistics
 		self::$calls++;
 
 		// Rough execution time
 		$this->microStart = microtime(true);
-
-		// URL
-		$this->serviceUrl = $url;
-
-		// Body
-		$this->requestInfo = '';
-		if (!empty($get)) {
-			$this->requestGet = $get;
-			$this->requestInfo .= "GET parameters: ".print_r($get, true)."\n";
-		}
-		if (!empty($json)) {
-			$this->requestJson = $json;
-			$this->requestInfo .= "JSON:\n".$json;
-		} else if (!empty($post)) {
-			$this->requestPost = $post;
-			$this->requestInfo .= "POST parameters: ".print_r($post, true);
-		}
 	}
 
-	/**
-	 * Set response body and details.
-	 *
-	 * @param integer $responseHttpCode Response HTTP Code.
-	 * @param string  $responseBody     Response body.
-	 * @param array   $responseHeaders  Response headers.
-	 *
-	 * @return void
-	 */
-	public function setResponseInfo($responseHttpCode, $responseBody, array $responseHeaders)
+	private function stopTimer()
 	{
-		$this->responseHttpCode = $responseHttpCode;
-		$this->responseBody = $responseBody;
-		$this->responseHeaders = $responseHeaders;
+		// Measure how many seconds it took to execute
 		$this->executionSeconds = microtime(true) - $this->microStart;
 
 		// Keep statistics
@@ -256,9 +197,6 @@ class CBCurlLogger
 	 */
 	public function onSuccess($responseData, $specialCode = self::SPECIAL_SUCCESS)
 	{
-		// Clear debugging info to save space
-		$this->requestInfo = null;
-		$this->responseBody = null;
 	}
 
 	/**
@@ -269,13 +207,10 @@ class CBCurlLogger
 	 *
 	 * @return void
 	 */
-//	private function setCurlError($errorNumber, $errorString)
-//	{
-//		$this->curlErrorCode = $errorNumber;
-//		$this->errorText = $errorString;
-//		$this->executionSeconds = microtime(true) - $this->microStart;
-
-//		$this->flushIntoDatabase();
-//		$this->mail();
-//	}
+	public function setCurlError($errorNumber, $errorString)
+	{
+		$this->curlErrorCode = $errorNumber;
+		$this->errorText = $errorString;
+		$this->stopTimer();
+	}
 }

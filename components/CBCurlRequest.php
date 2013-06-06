@@ -34,27 +34,6 @@ class CBCurlRequest
 	protected $logger = null;
 
 	/**
-	 * Files to be sent.
-	 *
-	 * @var array
-	 */
-	private $requestFiles = array();
-
-	/**
-	 * Get parameters. Used with all verbs.
-	 *
-	 * @var array
-	 */
-	protected $requestGetParams = array();
-
-	/**
-	 * Post parameters. Used only for POST requests.
-	 *
-	 * @var array
-	 */
-	protected $requestPostParams = array();
-
-	/**
 	 * HTTP authorization.
 	 *
 	 * @var string
@@ -76,20 +55,6 @@ class CBCurlRequest
 	protected $requestEncoding = 'gzip';
 
 	/**
-	 * Last URL executed.
-	 *
-	 * @var string
-	 */
-	protected $lastUrl = '';
-
-	/**
-	 * Last http verb used (get, post, put, etc).
-	 *
-	 * @var string
-	 */
-	protected $lastVerb = '';
-
-	/**
 	 * Incoming response details.
 	 *
 	 * @var array
@@ -106,21 +71,21 @@ class CBCurlRequest
 	/**
 	 * Request message.
 	 *
-	 * @var CBCurlMessage
+	 * @var CBHttpMessageRequest
 	 */
 	protected $requestMessage = null;
 
 	/**
 	 * Response message.
 	 *
-	 * @var CBCurlMessage
+	 * @var CBHttpMessageResponse
 	 */
 	protected $responseMessage = null;
 	/**
 	 * Set outgoing http data encoding
 	 *
 	 * @param string $encoding
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	/* 	public function setEncoding($encoding)
 	  {
@@ -133,7 +98,7 @@ class CBCurlRequest
 	 * Set http request timeout (in seconds)
 	 *
 	 * @param int $timeout
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	/* 	public function setTimeout($timeout)
 	  {
@@ -147,7 +112,7 @@ class CBCurlRequest
 	 *
 	 * @param string $user
 	 * @param string $pass
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	/* 	public function setAuth($user = null, $pass = null)
 	  {
@@ -163,20 +128,17 @@ class CBCurlRequest
 
 	public function __construct()
 	{
-		$this->requestMessage = new CBCurlMessage();
-		$this->responseMessage = new CBCurlMessage();
+		$this->requestMessage = new CBHttpMessageRequest();
+		$this->responseMessage = new CBHttpMessage();
 	}
 
 	/**
 	 * Reset all request and response data.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function reset()
 	{
-		$this->requestPostParams = array();
-		$this->requestGetParams = array();
-		$this->requestFiles = array();
 		$this->responseDetails = array();
 		$this->requestMessage->reset();
 //		$this->responseMessage->reset();
@@ -190,7 +152,7 @@ class CBCurlRequest
 	 * @param string $cookieName Name of request header.
 	 * @param string $cookieValue Value of request header.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestCookie($cookieName, $cookieValue)
 	{
@@ -216,7 +178,7 @@ class CBCurlRequest
 	 * @param string $field Name of request header.
 	 * @param string $value Value of request header.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestHeader($field, $value = null)
 	{
@@ -231,11 +193,11 @@ class CBCurlRequest
 	 * @param string $field    Name of file in the request.
 	 * @param string $filename Filename to upload or null to unset.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestFile($field, $filename = null)
 	{
-		$this->requestFiles[$field] = "@".realpath($filename);
+		$this->requestMessage->setFile($field, $filename);
 
 		return $this;
 	}
@@ -246,19 +208,11 @@ class CBCurlRequest
 	 * @param string $field Parameter name.
 	 * @param string $value New value or null to unset.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestPostParam($field, $value = null)
 	{
-		if (is_null($value)) {
-			// Unsetting
-			if (isset($this->requestGetParams[$field])) {
-				unset($this->requestGetParams[$field]);
-			}
-		} else {
-			$this->requestPostParams[$field] = (is_array($value) || is_object($value)) ?
-					json_encode($value) : $value;
-		}
+		$this->requestMessage->setPostParam($field, $value);
 
 		return $this;
 	}
@@ -268,21 +222,11 @@ class CBCurlRequest
 	 *
 	 * @param string $field Parameter name.
 	 * @param string $value New value or null to unset.
-	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestGetParam($field, $value = null)
 	{
-		if (is_null($value)) {
-			// Unsetting
-			if (isset($this->requestGetParams[$field])) {
-				unset($this->requestGetParams[$field]);
-			}
-		} else {
-			// Setting new value
-			$this->requestGetParams[$field] = (is_array($value) || is_object($value)) ?
-					json_encode($value) : $value;
-		}
+		$this->requestMessage->setGetParam($field, $value);
 
 		return $this;
 	}
@@ -291,12 +235,11 @@ class CBCurlRequest
 	 * Retrieve a request get parameter (if already set).
 	 *
 	 * @param string $field Parameter name.
-	 *
 	 * @return mixed Value of get parameter previously set using setGetParam() or null
 	 */
 	public function getRequestGetParam($field)
 	{
-		return isset($this->requestGetParams[$field]) ? $this->requestGetParams[$field] : null;
+		return $this->requestMessage->getGetParam($field);
 	}
 
 	/**
@@ -304,7 +247,7 @@ class CBCurlRequest
 	 *
 	 * @param mixed $data Json data.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestJsonBody($data)
 	{
@@ -319,7 +262,7 @@ class CBCurlRequest
 	 *
 	 * @param string $data XML data.
 	 *
-	 * @return Rest
+	 * @return CBCurlRequest
 	 */
 	public function setRequestXml($data)
 	{
@@ -395,12 +338,12 @@ class CBCurlRequest
 			return $this->requestMessage->rawBody;
 		} else {
 			// Set post body. Maybe we need files as well
-			if (empty($this->requestFiles)) {
+			if (empty($this->requestMessage->files)) {
 				// Content-type: application/x-www-form-urlencoded
-				return http_build_query($this->requestPostParams, '', '&');
+				return http_build_query($this->requestMessage->postParams, '', '&');
 			} else {
 				// Content-type: multipart/form-data
-				return $this->requestPostParams + $this->requestFiles;
+				return $this->requestMessage->postParams + $this->requestMessage->files;
 			}
 		}
 	}
@@ -411,22 +354,16 @@ class CBCurlRequest
 	 * @param string  $url               Target url.
 	 * @param integer $acceptContentType Expected response content type.
 	 * @param integer $returnFormat      Type of data to be returned.
-	 *
 	 * @return mixed
 	 */
 	public function post($url, $acceptContentType = 0, $returnFormat = 0)
 	{
-		$this->lastVerb = 'POST';
+		$this->requestMessage->verb = 'POST';
+		$this->requestMessage->uri = $url;
 
-		$ch = $this->curlInit($url, $acceptContentType);
+		$this->curlExec();
 
-		// It's a post request
-		curl_setopt($ch, CURLOPT_POST, 1);
-
-		// Build and set body
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->compileRequestBody());
-
-		return $this->curlExec($ch, $acceptContentType, $returnFormat);
+		return $this->getProcessedResponseBody($acceptContentType, $returnFormat);
 	}
 
 	/**
@@ -435,14 +372,16 @@ class CBCurlRequest
 	 * @param string  $url               Target url.
 	 * @param integer $acceptContentType Expected response content type.
 	 * @param integer $returnFormat      Type of data to be returned.
-	 *
 	 * @return mixed
 	 */
 	public function get($url, $acceptContentType = 0, $returnFormat = 0)
 	{
-		$this->lastVerb = 'GET';
+		$this->requestMessage->verb = 'GET';
+		$this->requestMessage->uri = $url;
 
-		return $this->curlExec($this->curlInit($url), $acceptContentType, $returnFormat);
+		$this->curlExec();
+
+		return $this->getProcessedResponseBody($acceptContentType, $returnFormat);
 	}
 
 	/**
@@ -451,18 +390,16 @@ class CBCurlRequest
 	 * @param string  $url               Target url.
 	 * @param integer $acceptContentType Expected response content type.
 	 * @param integer $returnFormat      Type of data to be returned.
-	 *
 	 * @return mixed
 	 */
 	public function delete($url, $acceptContentType = 0, $returnFormat = 0)
 	{
-		$this->lastVerb = 'DELETE';
+		$this->requestMessage->verb = 'DELETE';
+		$this->requestMessage->uri = $url;
 
-		$ch = $this->curlInit($url);
+		$this->curlExec();
 
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-
-		return $this->curlExec($ch, $acceptContentType, $returnFormat);
+		return $this->getProcessedResponseBody($acceptContentType, $returnFormat);
 	}
 
 	/**
@@ -471,31 +408,16 @@ class CBCurlRequest
 	 * @param string  $url               Target url.
 	 * @param integer $acceptContentType Expected response content type.
 	 * @param integer $returnFormat      Type of data to be returned.
-	 *
 	 * @return mixed
 	 */
 	public function put($url, $acceptContentType = 0, $returnFormat = 0)
 	{
-		$this->lastVerb = 'PUT';
+		$this->requestMessage->verb = 'PUT';
+		$this->requestMessage->uri = $url;
 
-		$ch = $this->curlInit($url);
+		$this->curlExec();
 
-		// It's a PUT request
-		curl_setopt($ch, CURLOPT_PUT, true);
-
-		$data = $this->compileRequestBody();
-
-		// Only string data may be used
-		if (is_string($data) && !empty($data)) {
-			$fh = fopen('php://temp', 'rw');
-			fwrite($fh, $data);
-			rewind($fh);
-
-			curl_setopt($ch, CURLOPT_INFILE, $fh);
-			curl_setopt($ch, CURLOPT_INFILESIZE, strlen($data));
-		}
-
-		return $this->curlExec($ch, $acceptContentType, $returnFormat);
+		return $this->getProcessedResponseBody($acceptContentType, $returnFormat);
 	}
 
 	/**
@@ -582,29 +504,63 @@ class CBCurlRequest
 	}
 
 	/**
-	 * Initialize a curl object and set common options.
+	 * Return response body.
 	 *
-	 * @param string $url Called url.
-	 *
-	 * @return resource
+	 * @param integer $acceptContentType Expected response content type.
+	 * @param integer $returnFormat Type of data to be returned.
+	 * @return mixed
+	 * @throws Exception
 	 */
-	protected function curlInit($url)
+	private function getProcessedResponseBody($acceptContentType, $returnFormat)
+	{
+		// Return content
+		switch ($acceptContentType) {
+
+			// JSON
+			case self::CONTENT_JSON:
+				if (empty($this->responseMessage->rawBody)) {
+					throw new Exception('CURL returned empty body');
+				}
+				return $this->responseMessage->getBodyAsJson($returnFormat != self::RETURN_OBJECT);
+
+			// XML
+			case self::CONTENT_XML:
+				if (empty($this->responseMessage->rawBody)) {
+					throw new Exception('CURL returned empty body');
+				}
+				return $this->responseMessage->getBodyAsXml();
+
+			// Default (RAW)
+			default:
+				return $this->responseMessage->rawBody;
+		}
+	}
+
+	/**
+	 * Execute a curl request based on current request message.
+	 */
+	protected function curlExec()
 	{
 		$ch = curl_init();
 
-		// Append get parameters
-		if (!empty($this->requestGetParams)) {
-			$url .= '?'.http_build_query($this->requestGetParams, '', '&');
+		//
+		// Prepare final url
+		//
+		$url = $this->requestMessage->uri;
+
+		if (!empty($this->requestMessage->getParams)) {
+			$url .= '?'.http_build_query($this->requestMessage->getParams, '', '&');
 		}
 
+		//
 		// Set basic options
+		//
 		curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeoutSeconds);
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_HEADER, false);
 		curl_setopt($ch, CURLOPT_HEADERFUNCTION, array($this, 'parseResponseHeader'));
 		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this, 'parseResponseBody'));
-		$this->lastUrl = $url;
 
 		// Set authorization flags
 		if ($this->auth) {
@@ -612,6 +568,9 @@ class CBCurlRequest
 			curl_setopt($ch, CURLOPT_USERPWD, $this->auth);
 		}
 
+		//
+		// Build list of headers
+		//
 		$requestHeaders = array();
 
 		// Add custom headers
@@ -638,31 +597,50 @@ class CBCurlRequest
 			curl_setopt($ch, CURLOPT_ENCODING, $this->requestEncoding);
 		}
 
-		return $ch;
-	}
+		//
+		// Verb-specific handler
+		//
+		switch (strtolower($this->requestMessage->verb)) {
+		case 'post':
+			// It's a post request
+			curl_setopt($ch, CURLOPT_POST, 1);
 
-	/**
-	 * Execute curl query and return response body.
-	 *
-	 * @param string  $ch                Curl instance to execute.
-	 * @param integer $acceptContentType Expected response content type.
-	 * @param integer $returnFormat      Type of data to be returned.
-	 *
-	 * @return mixed
-	 */
-	protected function curlExec($ch, $acceptContentType, $returnFormat)
-	{
+			// Build and set body
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $this->compileRequestBody());
+			break;
+
+		case 'delete':
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+			break;
+
+		case 'put':
+			// It's a PUT request
+			curl_setopt($ch, CURLOPT_PUT, true);
+
+			$data = $this->compileRequestBody();
+
+			// Only string data may be used
+			if (is_string($data) && !empty($data)) {
+				$fh = fopen('php://temp', 'rw');
+				fwrite($fh, $data);
+				rewind($fh);
+
+				curl_setopt($ch, CURLOPT_INFILE, $fh);
+				curl_setopt($ch, CURLOPT_INFILESIZE, strlen($data));
+			}
+			break;
+
+		default:
+		}
+
 		if ($this->logger) {
 			// Log request information
-			$this->logger->setRequestInfo($this->lastUrl,
-					$this->requestGetParams,
-					$this->requestPostParams,
-					$this->requestMessage->rawBody);
+			$this->logger->setRequestInfo($this->requestMessage);
 		}
 
 		if (defined('YII_DEBUG') && constant('YII_DEBUG')) {
 			// Start Yii Profiling
-			$yiiProfilingToken = get_class($this).'::'.$this->lastVerb.'('.$this->lastUrl.')';
+			$yiiProfilingToken = get_class($this).'::'.$this->requestMessage->verb.'('.$this->requestMessage->uri.')';
 			$yiiProfilingCategory = 'bogo-yii.curl-request';
 			Yii::beginProfile($yiiProfilingToken, $yiiProfilingCategory);
 
@@ -677,7 +655,9 @@ class CBCurlRequest
 		// Initialize response body
 		$this->responseMessage->reset();
 
+		//
 		// Execute the HTTP request
+		//
 		$curlReturnValue = curl_exec($ch);
 
 		if ($yiiProfilingToken) {
@@ -698,10 +678,10 @@ class CBCurlRequest
 			if ($curlReturnValue === false) {
 				$error = curl_error($ch);
 
-//			if ($this->_log) {
-				// Log curl error
-//				$this->_log->setCurlError(curl_errno($ch), $error);
-//			}
+				if ($this->logger) {
+					// Log curl error
+					$this->logger->setCurlError(curl_errno($ch), $error);
+				}
 
 				curl_close($ch);
 				throw new Exception("CURL Error: ".htmlspecialchars($error));
@@ -720,98 +700,17 @@ class CBCurlRequest
 		// Done with this descriptor
 		curl_close($ch);
 
+		$this->responseMessage->code = $this->responseDetails['http_code'];
+
 		if ($this->logger) {
 			// Log successful response information
-			$this->logger->setResponseInfo($this->responseDetails['http_code'],
-					$this->responseMessage->rawBody, $this->responseMessage->headers);
+			$this->logger->setResponseInfo($this->responseMessage);
 		}
 
 		// Network operation succeeded but way may have an HTTP error
-		if ($this->responseDetails['http_code'] >= 400) {
-
-			throw new Exception($this->responseMessage->rawBody ?: 'Server error '.$this->responseDetails['http_code'], $this->responseDetails['http_code']);
+		if ($this->responseMessage->code >= 400) {
+			throw new Exception($this->responseMessage->rawBody ?: 'Server error '.$this->responseMessage->code, $this->responseMessage->code);
 		}
-
-		// Return content
-		switch ($acceptContentType) {
-
-			// JSON
-			case self::CONTENT_JSON:
-				if (empty($this->responseMessage->rawBody)) {
-					throw new Exception('CURL returned empty body');
-				}
-
-				switch ($returnFormat) {
-					case self::RETURN_OBJECT:
-						$this->responseMessage->rawBody = json_decode($this->responseMessage->rawBody, false);
-						break;
-
-					//				case self::RETURN_ASSOC:
-					default:
-						$this->responseMessage->rawBody = json_decode($this->responseMessage->rawBody, true);
-						break;
-				}
-
-				if (is_null($this->responseMessage->rawBody)) {
-					// When expecting JSON, empty responses are probably invalid
-					if ($this->logger) {
-						$error = 'Response body does not have proper JSON format';
-
-						$jsonErrorCode = json_last_error();
-
-						switch ($jsonErrorCode) {
-							case JSON_ERROR_NONE:
-								$jsonErrorMessage = false;
-							case JSON_ERROR_DEPTH:
-								$jsonErrorMessage =  'Maximum stack depth exceeded';
-							case JSON_ERROR_STATE_MISMATCH:
-								$jsonErrorMessage =  'Invalid or malformed JSON';
-							case JSON_ERROR_CTRL_CHAR:
-								$jsonErrorMessage =  'Control character error, possibly incorrectly encoded';
-							case JSON_ERROR_SYNTAX:
-								$jsonErrorMessage =  'Syntax error';
-							case JSON_ERROR_UTF8:
-								$jsonErrorMessage =  'Malformed UTF-8 characters, possibly incorrectly encoded';
-							default:
-								$jsonErrorMessage =  'Unsupported error code '.$jsonErrorCode;
-						}
-
-
-						if ($jsonErrorMessage) {
-							$error .= ' ('.$jsonErrorMessage.')';
-						}
-
-						$this->logger->onError(CBCurlLogger::ERROR_MALFORMED_RESPONSE, $error);
-					}
-				}
-				break;
-
-			// XML
-			case self::CONTENT_XML:
-				if (empty($this->responseMessage->rawBody)) {
-					throw new Exception('CURL returned empty body');
-				}
-				$this->responseMessage->rawBody = simplexml_load_string($this->responseMessage->rawBody);
-				break;
-
-			// Default (RAW)
-			default:
-		}
-
-		// Stop using this _log (so subsequent calls are forced to use a new one)
-//		$this->logger = null;
-
-		return $this->responseMessage->rawBody;
-	}
-
-	/**
-	 * Return last url called.
-	 *
-	 * @return string
-	 */
-	public function getLastUrl()
-	{
-		return $this->lastUrl;
 	}
 
 	/**
@@ -849,5 +748,20 @@ class CBCurlRequest
 	public function getLogger()
 	{
 		return $this->logger;
+	}
+
+	/**
+	 * Executes request message and returns response message.
+	 *
+	 * @param CBHttpMessageRequest $requestMessage
+	 * @return CBHttpMessageResponse
+	 */
+	public function exec(CBHttpMessageRequest $requestMessage)
+	{
+		$this->requestMessage = $requestMessage;
+
+		$this->curlExec();
+
+		return $this->responseMessage;
 	}
 }
