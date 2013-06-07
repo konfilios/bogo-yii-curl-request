@@ -131,7 +131,7 @@ abstract class CBHttpCall
 		return $this->errorMessage;
 	}
 
-		/**
+	/**
 	 * Perform extra debugging tasks.
 	 *
 	 * @return boolean
@@ -145,10 +145,13 @@ abstract class CBHttpCall
 	 * Perform extra debugging tasks.
 	 *
 	 * @param boolean $inDebugMode
+	 * @return CBHttpCall
 	 */
 	public function setInDebugMode($inDebugMode)
 	{
 		$this->inDebugMode = $inDebugMode;
+
+		return $this;
 	}
 
 	/**
@@ -185,10 +188,13 @@ abstract class CBHttpCall
 	 * Timeout in seconds.
 	 *
 	 * @param float $timeoutSeconds
+	 * @return CBHttpCall
 	 */
 	public function setTimeoutSeconds($timeoutSeconds)
 	{
 		$this->timeoutSeconds = $timeoutSeconds;
+
+		return $this;
 	}
 
 	/**
@@ -257,6 +263,9 @@ abstract class CBHttpCall
 			$this->stopTimer();
 			break;
 		}
+
+		// Everythin ok, update state
+		$this->state = $newState;
 	}
 
 	/**
@@ -294,7 +303,7 @@ abstract class CBHttpCall
 		if ($requestMessageOrVerb instanceof CBHttpMessageRequest) {
 			$requestMessage = $requestMessageOrVerb;
 		} else {
-			$requestMessage = new CBHttpMessageRequest($requestMessageOrVerb, $requestUri);
+			$requestMessage = CBHttpMessageRequest::create($requestMessageOrVerb, $requestUri);
 		}
 
 		// Instantiate call object

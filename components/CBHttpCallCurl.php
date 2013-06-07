@@ -82,7 +82,8 @@ class CBHttpCallCurl extends CBHttpCall
 	 */
 	private function parseResponseHeader($ch, $headerLine)
 	{
-		$this->responseMessage($headerLine);
+		$this->responseMessage->parseHeaderLine($headerLine);
+
 		return strlen($headerLine);
 	}
 
@@ -108,6 +109,10 @@ class CBHttpCallCurl extends CBHttpCall
 	}
 
 	/**
+	 * Initialize a cURL session.
+	 *
+	 * This method is publicly exposed in order to be used by curl multi-calls.
+	 *
 	 * @return resource
 	 */
 	public function curlInit()
@@ -134,10 +139,10 @@ class CBHttpCallCurl extends CBHttpCall
 		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this, 'parseResponseBody'));
 
 		// Set authorization flags
-		if ($this->auth) {
-			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-			curl_setopt($ch, CURLOPT_USERPWD, $this->auth);
-		}
+//		if ($this->auth) {
+//			curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+//			curl_setopt($ch, CURLOPT_USERPWD, $this->auth);
+//		}
 
 		//
 		// Build list of headers
@@ -151,7 +156,7 @@ class CBHttpCallCurl extends CBHttpCall
 		//
 		// Verb-specific handler
 		//
-		switch (strtolower($this->requestMessage->verb)) {
+		switch (strtolower($this->requestMessage->httpVerb)) {
 		case 'post':
 			// It's a post request
 			curl_setopt($ch, CURLOPT_POST, 1);
@@ -197,6 +202,13 @@ class CBHttpCallCurl extends CBHttpCall
 		return $ch;
 	}
 
+	/**
+	 * Close a cURL session.
+	 *
+	 * This method is publicly exposed in order to be used by curl multi-calls.
+	 *
+	 * @param resource $ch
+	 */
 	public function curlClose($ch)
 	{
 		// Consider this the end of the call

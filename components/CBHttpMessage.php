@@ -140,40 +140,7 @@ class CBHttpMessage
 	 */
 	public function getBodyAsJson($returnAssoc = true)
 	{
-		$json = json_decode($this->responseMessage->rawBody, $returnAssoc);
-
-		if (!is_null($json)) {
-			return $json;
-		}
-
-		// When expecting JSON, empty responses are probably invalid
-		$error = 'Response body does not have proper JSON format';
-
-		$jsonErrorCode = json_last_error();
-
-		switch ($jsonErrorCode) {
-			case JSON_ERROR_NONE:
-				$jsonErrorMessage = false;
-			case JSON_ERROR_DEPTH:
-				$jsonErrorMessage =  'Maximum stack depth exceeded';
-			case JSON_ERROR_STATE_MISMATCH:
-				$jsonErrorMessage =  'Invalid or malformed JSON';
-			case JSON_ERROR_CTRL_CHAR:
-				$jsonErrorMessage =  'Control character error, possibly incorrectly encoded';
-			case JSON_ERROR_SYNTAX:
-				$jsonErrorMessage =  'Syntax error';
-			case JSON_ERROR_UTF8:
-				$jsonErrorMessage =  'Malformed UTF-8 characters, possibly incorrectly encoded';
-			default:
-				$jsonErrorMessage =  'Unsupported error code '.$jsonErrorCode;
-		}
-
-
-		if ($jsonErrorMessage) {
-			$error .= ' ('.$jsonErrorMessage.')';
-		}
-
-		throw new Exception($error, $jsonErrorCode);
+		return json_decode($this->rawBody, $returnAssoc);
 	}
 
 	/**
@@ -183,6 +150,6 @@ class CBHttpMessage
 	 */
 	public function getBodyAsXml()
 	{
-		return simplexml_load_string($this->responseMessage->rawBody);
+		return simplexml_load_string($this->rawBody);
 	}
 }

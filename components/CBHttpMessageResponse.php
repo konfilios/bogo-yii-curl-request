@@ -41,10 +41,10 @@ class CBHttpMessageResponse extends CBHttpMessage
 		if ($pos === false) {
 			// It's probably the status line
 			if ('HTTP' === strtoupper(substr($headerLine, 0, 4))) {
-				$statusComponents = explode(' ', $headerLine);
+				$statusComponents = explode(' ', trim($headerLine));
 				$this->httpProtocolVersion = trim(array_shift($statusComponents));
 				$this->httpStatusCode = intval(trim(array_shift($statusComponents)));
-				$this->httpReasonPhrase = implode(' ', trim(array_shift($statusComponents)));
+				$this->httpReasonPhrase = implode(' ', $statusComponents);
 				return true;
 			} else {
 				return false;
