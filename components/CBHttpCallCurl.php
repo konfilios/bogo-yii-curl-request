@@ -80,40 +80,6 @@ class CBHttpCallCurl extends CBHttpCall
 	}
 
 	/**
-	 * Parse response headers.
-	 *
-	 * Callback function used by CURLOPT_HEADERFUNCTION.
-	 *
-	 * @param mixed  $ch         Curl resource.
-	 * @param string $headerLine Header string containing both field name and value.
-	 *
-	 * @return integer Number of bytes parsed
-	 */
-	private function parseResponseHeader($ch, $headerLine)
-	{
-		$this->responseMessage->parseHeaderLine($headerLine);
-
-		return strlen($headerLine);
-	}
-
-	/**
-	 * Parse response body.
-	 *
-	 * Callback function used by CURLOPT_WRITEFUNCTION.
-	 *
-	 * @param mixed  $ch                Curl resource.
-	 * @param string $responseBodyChunk Response body chunk.
-	 *
-	 * @return integer Number of bytes parsed
-	 */
-	private function parseResponseBody($ch, $responseBodyChunk)
-	{
-		$this->responseMessage->appendRawBodyString($responseBodyChunk);
-
-		return strlen($responseBodyChunk);
-	}
-
-	/**
 	 * Initialize a cURL session.
 	 *
 	 * This method is publicly exposed in order to be used by curl multi-calls.
@@ -141,8 +107,15 @@ class CBHttpCallCurl extends CBHttpCall
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_HEADER, false);
-		curl_setopt($ch, CURLOPT_HEADERFUNCTION, array($this, 'parseResponseHeader'));
-		curl_setopt($ch, CURLOPT_WRITEFUNCTION, array($this, 'parseResponseBody'));
+		curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($ch, $headerLine) {
+			$this->responseMessage->parseHeaderLine($headerLine);
+			return strlen($headerLine);
+		});
+		curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $responseBodyChunk) {
+			$this->responseMessage->appendRawBodyString($responseBodyChunk);
+
+			return strlen($responseBodyChunk);
+		});
 
 		// Set authorization flags
 //		if ($this->auth) {
