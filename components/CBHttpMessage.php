@@ -13,44 +13,41 @@ class CBHttpMessage
 	 *
 	 * @var string
 	 */
-	public $rawBody = null;
+	private $rawBody = null;
 
 	/**
 	 * Headers as key-value pairs.
 	 *
 	 * @var string[]
 	 */
-	public $headers = array();
+	private $headers = array();
 
 	/**
 	 * Cookies.
 	 *
 	 * @var array[]
 	 */
-	public $cookies = array();
+	private $cookies = array();
 
 	/**
-	 * User-defined fields.
+	 * Batch assignment of headers.
 	 *
-	 * @var array
-	 */
-	public $userFields = array();
-
-	/**
-	 * Set raw body.
-	 *
-	 * @param string $rawBody
+	 * @param array $fields
 	 * @return CBHttpMessage
 	 */
-	public function setRawBody($rawBody)
+	public function setHeaders(array $fields)
 	{
-		$this->rawBody = $rawBody;
+		foreach ($fields as $field=>$value) {
+			$this->setHeader($field, $value);
+		}
 
 		return $this;
 	}
 
 	/**
-	 * Add a header.
+	 * Set a header.
+	 *
+	 * If value is null, then the header is removed (if it's there).
 	 *
 	 * @param string $field Name of request header.
 	 * @param string $value Value of request header.
@@ -58,25 +55,30 @@ class CBHttpMessage
 	 */
 	public function setHeader($field, $value = null)
 	{
-		$this->headers[$field] = $value;
+		if ($value === null) {
+			if (isset($this->headers[$field])) {
+				unset($this->headers[$field]);
+			}
+		} else {
+			$this->headers[$field] = $value;
+		}
 
 		return $this;
 	}
 
 	/**
-	 * Get a specific response header or all (if no $field is given).
+	 * Get a specific header or all if no $field is given.
 	 *
-	 * @param string $headerName Header name.
-	 *
+	 * @param string $field
 	 * @return mixed
 	 */
-	public function getHeader($headerName = '')
+	public function getHeader($field = null)
 	{
-		if (empty($headerName)) {
+		if ($field === null) {
 			return $this->headers;
 		} else {
-			$headerName = strtolower($headerName);
-			return isset($this->headers[$headerName]) ? $this->headers[$headerName] : null;
+			$field = strtolower($field);
+			return isset($this->headers[$field]) ? $this->headers[$field] : null;
 		}
 	}
 
@@ -131,6 +133,56 @@ class CBHttpMessage
 		$this->cookies[$cookieName] = $cookieAttributes;
 
 		return $this;
+	}
+
+	/**
+	 * Set raw body.
+	 *
+	 * @param string $rawBody
+	 * @return CBHttpMessage
+	 */
+	public function setRawBody($rawBody)
+	{
+		$this->rawBody = $rawBody;
+
+		return $this;
+	}
+
+	/**
+	 * Append a string to the raw body.
+	 *
+	 * @param string $rawBodyString
+	 * @return CBHttpMessage
+	 */
+	public function appendRawBodyString($rawBodyString)
+	{
+		if ($this->rawBody === null) {
+			$this->rawBody = $rawBodyString;
+		} else {
+			$this->rawBody .= $rawBodyString;
+		}
+
+		return $this;
+	}
+
+	/**
+	 * True if there's non-empty raw body.
+	 *
+	 * @return boolean
+	 */
+	public function hasRawBody()
+	{
+		return ($this->rawBody !== null);
+	}
+
+	/**
+	 * Get raw body.
+	 *
+	 * @return string
+	 */
+	public function getRawBody()
+	{
+		return $this->rawBody;
 	}
 
 	/**

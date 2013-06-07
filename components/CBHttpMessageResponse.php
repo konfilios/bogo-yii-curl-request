@@ -13,21 +13,51 @@ class CBHttpMessageResponse extends CBHttpMessage
 	 *
 	 * @var integer
 	 */
-	public $httpStatusCode;
+	private $httpStatusCode;
 
 	/**
 	 * HTTP Response Status string.
 	 *
 	 * @var string
 	 */
-	public $httpReasonPhrase;
+	private $httpReasonPhrase;
 
 	/**
 	 * Version of HTTP protocol.
 	 *
 	 * @var string
 	 */
-	public $httpProtocolVersion;
+	private $httpProtocolVersion;
+
+	/**
+	 * HTTP Response Code.
+	 *
+	 * @return integer
+	 */
+	public function getHttpStatusCode()
+	{
+		return $this->httpStatusCode;
+	}
+
+	/**
+	 * HTTP Response Status string.
+	 *
+	 * @return string
+	 */
+	public function getHttpReasonPhrase()
+	{
+		return $this->httpReasonPhrase;
+	}
+
+	/**
+	 * Version of HTTP protocol.
+	 *
+	 * @return string
+	 */
+	public function getHttpProtocolVersion()
+	{
+		return $this->httpProtocolVersion;
+	}
 
 	/**
 	 * Parse header line.

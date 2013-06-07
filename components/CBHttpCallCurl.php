@@ -29,17 +29,25 @@ class CBHttpCallCurl extends CBHttpCall
 	 */
 	protected function compileRequestBody()
 	{
-		if (!empty($this->requestMessage->rawBody)) {
+		if ($this->requestMessage->hasRawBody()) {
 			// Raw body
-			return $this->requestMessage->rawBody;
+			return $this->requestMessage->getRawBody();
+
 		} else {
 			// Set post body. Maybe we need files as well
-			if (empty($this->requestMessage->files)) {
-				// Content-type: application/x-www-form-urlencoded
-				return http_build_query($this->requestMessage->postParams, '', '&');
-			} else {
+			$files = $this->requestMessage->getFile();
+			$postParams = $this->requestMessage->getPostParam();
+
+			if (!empty($files)) {
 				// Content-type: multipart/form-data
-				return $this->requestMessage->postParams + $this->requestMessage->files;
+				foreach ($files as $field=>$filename) {
+					$postParams[$field] = "@".realpath($filename);
+				}
+				return $postParams;
+
+			} else {
+				// Content-type: application/x-www-form-urlencoded
+				return http_build_query($postParams, '', '&');
 			}
 		}
 	}
@@ -54,16 +62,17 @@ class CBHttpCallCurl extends CBHttpCall
 		$requestHeaders = array();
 
 		// Add custom headers
-		foreach ($this->requestMessage->headers as $field => $value) {
+		foreach ($this->requestMessage->getHeader() as $field => $value) {
 			$requestHeaders[] = $field.': '.$value;
 		}
 
 		// Add cookie header
-		if (!empty($this->requestMessage->cookies)) {
-			$cookieList = '';
-			foreach ($this->requestMessage->getCookie() as $cookieName=>$cookieValue) {
-				$cookieList .= ($cookieList ? '; ' : '').$cookieName.'='.$cookieValue;
-			}
+		$cookieList = '';
+		foreach ($this->requestMessage->getCookie() as $cookieName=>$cookieValue) {
+			$cookieList .= ($cookieList ? '; ' : '').$cookieName.'='.$cookieValue;
+		}
+
+		if (!empty($cookieList)) {
 			$requestHeaders[] = 'Cookie: '.$cookieList;
 		}
 
@@ -99,11 +108,7 @@ class CBHttpCallCurl extends CBHttpCall
 	 */
 	private function parseResponseBody($ch, $responseBodyChunk)
 	{
-		if ($this->responseMessage->rawBody === null) {
-			$this->responseMessage->rawBody = $responseBodyChunk;
-		} else {
-			$this->responseMessage->rawBody .= $responseBodyChunk;
-		}
+		$this->responseMessage->appendRawBodyString($responseBodyChunk);
 
 		return strlen($responseBodyChunk);
 	}
@@ -122,10 +127,11 @@ class CBHttpCallCurl extends CBHttpCall
 		//
 		// Prepare final url
 		//
-		$url = $this->requestMessage->uri;
+		$url = $this->requestMessage->getUri();
 
-		if (!empty($this->requestMessage->getParams)) {
-			$url .= '?'.http_build_query($this->requestMessage->getParams, '', '&');
+		$getParams = $this->requestMessage->getGetParam();
+		if (!empty($getParams)) {
+			$url .= '?'.http_build_query($getParams, '', '&');
 		}
 
 		//
@@ -156,7 +162,7 @@ class CBHttpCallCurl extends CBHttpCall
 		//
 		// Verb-specific handler
 		//
-		switch (strtolower($this->requestMessage->httpVerb)) {
+		switch (strtolower($this->requestMessage->getHttpVerb())) {
 		case 'post':
 			// It's a post request
 			curl_setopt($ch, CURLOPT_POST, 1);
@@ -245,7 +251,7 @@ class CBHttpCallCurl extends CBHttpCall
 		$this->curlClose($ch);
 
 		// Network error
-		if ($this->responseMessage->rawBody === null) {
+		if (!$this->responseMessage->hasRawBody()) {
 			// WRITEFUNCTION did not return any content. Probably an error
 			if ($curlReturnValue === false) {
 				throw new CBHttpCallException($this->errorMessage, $this->errorCode);
