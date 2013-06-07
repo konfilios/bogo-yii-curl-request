@@ -79,12 +79,6 @@ Now, let's take a look at the options you have for configuring the transport lay
 $responseObject =
 		// Request Message
 		CBHttpMessageRequest::create('POST', $uri)
-		->setHeader('Content-type', 'application/json')
-		->setGetParams(array(
-			'id' => 230,
-			'title' => 'Custom Title'
-		))
-		->setRawBody(json_encode($requestData))
 		// Call
 		->createCall()
 		->setTimeoutSeconds(5.37)		// Communication timeout
@@ -111,16 +105,8 @@ returning it.
 $responseObject =
 		// Request Message
 		CBHttpMessageRequest::create('POST', $uri)
-		->setHeader('Content-type', 'application/json')
-		->setGetParams(array(
-			'id' => 230,
-			'title' => 'Custom Title'
-		))
-		->setRawBody(json_encode($requestData))
 		// Call
 		->createCall()
-		->setTimeoutSeconds(5.37)
-		->setInDebugMode(true)
 		->exec()
 		// Response Message
 		->validateStatus()				// Throws an exception for HTTP CODE >= 400
@@ -141,16 +127,9 @@ you must break the fluid style of method calls:
 $responseMessage =
 		// Request Message
 		CBHttpMessageRequest::create('POST', $uri)
-		->setHeader('Content-type', 'application/json')
-		->setGetParams(array(
-			'id' => 230,
-			'title' => 'Custom Title'
-		))
 		->setRawBody(json_encode($requestData))
 		// Call
 		->createCall()
-		->setTimeoutSeconds(5.37)
-		->setInDebugMode(true)
 		->exec();
 
 // Retrieve object wrapped in response message
@@ -172,17 +151,12 @@ In that case, you'll have to break the chain again:
 $httpCall =
 		// Request Message
 		CBHttpMessageRequest::create('POST', $uri)
-		->setHeader('Content-type', 'application/json')
-		->setGetParams(array(
-			'id' => 230,
-			'title' => 'Custom Title'
-		))
-		->setRawBody(json_encode($requestData))
 		// Call
 		->createCall()
 		->setTimeoutSeconds(5.37)
 		->setInDebugMode(true);
 
+// Get response object
 $responseObject = $httpCall->exec()
 		// Response Message
 		->validateStatus()
