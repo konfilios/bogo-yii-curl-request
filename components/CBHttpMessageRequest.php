@@ -2,7 +2,7 @@
 /**
  * Request HTTP Message.
  *
- * @since 1.0
+ * @since 2.0
  * @package Components
  * @author Konstantinos Filios <konfilios@gmail.com>
  */
@@ -15,7 +15,7 @@ class CBHttpMessageRequest extends CBHttpMessage
 	 *
 	 * @var string
 	 */
-	public $verb;
+	public $httpVerb;
 
 	/**
 	 * HTTP Request URI.
@@ -48,15 +48,15 @@ class CBHttpMessageRequest extends CBHttpMessage
 	/**
 	 * Create a new HTTP Request message.
 	 *
-	 * @param string $verb
+	 * @param string $httpVerb
 	 * @param string $uri
 	 * @return CBHttpMessageRequest
 	 */
-	static public function create($verb = null, $uri = null)
+	static public function create($httpVerb = null, $uri = null)
 	{
 		$message = new CBHttpMessageRequest();
 
-		$message->verb = $verb;
+		$message->httpVerb = $httpVerb;
 		$message->uri = $uri;
 
 		return $message;
@@ -131,24 +131,6 @@ class CBHttpMessageRequest extends CBHttpMessage
 			$this->requestPostParams[$field] = (is_array($value) || is_object($value)) ?
 					json_encode($value) : $value;
 		}
-
-		return $this;
-	}
-
-	/**
-	 * Reset all internal variables.
-	 *
-	 * @return CBHttpMessageRequest
-	 */
-	public function reset()
-	{
-		parent::reset();
-
-		$this->verb = null;
-		$this->uri = null;
-		$this->files = array();
-		$this->getParams = array();
-		$this->postParams = array();
 
 		return $this;
 	}

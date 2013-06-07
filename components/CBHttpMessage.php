@@ -2,7 +2,7 @@
 /**
  * Base HTTP Message.
  *
- * @since 1.0
+ * @since 2.0
  * @package Components
  * @author Konstantinos Filios <konfilios@gmail.com>
  */
@@ -28,6 +28,26 @@ class CBHttpMessage
 	 * @var array[]
 	 */
 	public $cookies = array();
+
+	/**
+	 * User-defined fields.
+	 *
+	 * @var array
+	 */
+	public $userFields = array();
+
+	/**
+	 * Set raw body.
+	 *
+	 * @param string $rawBody
+	 * @return CBHttpMessage
+	 */
+	public function setRawBody($rawBody)
+	{
+		$this->rawBody = $rawBody;
+
+		return $this;
+	}
 
 	/**
 	 * Add a header.
@@ -109,20 +129,6 @@ class CBHttpMessage
 		$cookieAttributes['value'] = $cookieValue;
 
 		$this->cookies[$cookieName] = $cookieAttributes;
-
-		return $this;
-	}
-
-	/**
-	 * Reset all internal variables.
-	 *
-	 * @return CBHttpMessage
-	 */
-	public function reset()
-	{
-		$this->cookies = array();
-		$this->headers = array();
-		$this->rawBody = null;
 
 		return $this;
 	}
