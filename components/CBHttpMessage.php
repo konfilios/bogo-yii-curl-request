@@ -33,7 +33,7 @@ class CBHttpMessage
 	 * Batch assignment of headers.
 	 *
 	 * @param array $fields
-	 * @return CBHttpMessage
+	 * @return CBHttpMessageRequest|CBHttpMessageResponse
 	 */
 	public function setHeaders(array $fields)
 	{
@@ -51,7 +51,7 @@ class CBHttpMessage
 	 *
 	 * @param string $field Name of request header.
 	 * @param string $value Value of request header.
-	 * @return CBHttpMessage
+	 * @return CBHttpMessageRequest|CBHttpMessageResponse
 	 */
 	public function setHeader($field, $value = null)
 	{
@@ -124,7 +124,7 @@ class CBHttpMessage
 	 * @param string $cookieName
 	 * @param string $cookieValue
 	 * @param array $cookieAttributes
-	 * @return CBHttpMessage
+	 * @return CBHttpMessageRequest|CBHttpMessageResponse
 	 */
 	public function setCookie($cookieName, $cookieValue, $cookieAttributes = array())
 	{
@@ -139,7 +139,7 @@ class CBHttpMessage
 	 * Set raw body.
 	 *
 	 * @param string $rawBody
-	 * @return CBHttpMessage
+	 * @return CBHttpMessageRequest|CBHttpMessageResponse
 	 */
 	public function setRawBody($rawBody)
 	{
@@ -152,7 +152,7 @@ class CBHttpMessage
 	 * Append a string to the raw body.
 	 *
 	 * @param string $rawBodyString
-	 * @return CBHttpMessage
+	 * @return CBHttpMessageRequest|CBHttpMessageResponse
 	 */
 	public function appendRawBodyString($rawBodyString)
 	{
