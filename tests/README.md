@@ -7,7 +7,12 @@ This folder contains two simple files:
 In order for this to work you'll need to put these files somewhere under your /var/www folder and
 possible alter the `$serverUrl` parameter in the `client.php` file.
 
-Then you can call the client.php file. Here's what I got:
+Then you can call the client.php file. Below is the output I got. It pre-calculates how
+much time it would take to execute these calls one after another and how much time it would
+take if they really ran in parallel (which is the maximum of all executions given these calls
+do not impose any serious load on the server to affect system performance).
+
+If you look at the last line of the output, you'll see we do get 6 seconds instead of 36.
 
 ```
 Prepared 8 calls with expected delay times:
