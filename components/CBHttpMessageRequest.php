@@ -260,6 +260,16 @@ class CBHttpMessageRequest extends CBHttpMessage
 	}
 
 	/**
+	 * Wrap into a call.
+	 *
+	 * @return CBHttpCall
+	 */
+	public function createCall($callClass = 'CBHttpCallCurl')
+	{
+		return new $callClass($this);
+	}
+
+	/**
 	 * Create a new HTTP Request message.
 	 *
 	 * @param string $httpVerb
