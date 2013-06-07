@@ -195,6 +195,21 @@ class CBHttpMessageRequest extends CBHttpMessage
 	}
 
 	/**
+	 * Batch assignment of GET parameters.
+	 *
+	 * @param array $fields
+	 * @return CBHttpMessageRequest
+	 */
+	public function setGetParams(array $fields)
+	{
+		foreach ($fields as $field=>$value) {
+			$this->setGetParam($field, $value);
+		}
+
+		return $this;
+	}
+
+	/**
 	 * Set value for a GET field.
 	 *
 	 * @param string $field Parameter name.
@@ -225,6 +240,21 @@ class CBHttpMessageRequest extends CBHttpMessage
 	public function getGetParam($field = null)
 	{
 		return ($field === null) ? $this->getParams : (isset($this->getParams[$field]) ? $this->getParams[$field] : null);
+	}
+
+	/**
+	 * Batch assignment of POST parameters.
+	 *
+	 * @param array $fields
+	 * @return CBHttpMessageRequest
+	 */
+	public function setPostParams(array $fields)
+	{
+		foreach ($fields as $field=>$value) {
+			$this->setPostParam($field, $value);
+		}
+
+		return $this;
 	}
 
 	/**
