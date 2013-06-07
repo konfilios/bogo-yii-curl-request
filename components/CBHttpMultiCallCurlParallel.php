@@ -57,9 +57,12 @@ class CBHttpMultiCallCurlParallel extends CBHttpMultiCall
 			curl_multi_add_handle($multiHandle, $curlHandles[$key]);
 		}
 
+
 		//
 		// Start performing the request
 		//
+		$this->startTimer();
+
 		$runningHandles = 0;
 		do {
 			$execReturnValue = curl_multi_exec($multiHandle, $runningHandles);
@@ -79,6 +82,7 @@ class CBHttpMultiCallCurlParallel extends CBHttpMultiCall
 				} while ($execReturnValue == CURLM_CALL_MULTI_PERFORM);
 			}
 		}
+		$this->stopTimer();
 
 		//
 		// Clean-up
