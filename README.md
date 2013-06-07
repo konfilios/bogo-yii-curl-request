@@ -193,3 +193,41 @@ echo $httpCall->getExecutionSeconds();
 print_r($httpCall->getDebugInfo());
 
 ```
+
+## Multi-calls
+
+cURL allows you to execute parallel calls. The interface we're using here is the following:
+- First construct an array of calls, exactly as you saw before
+- Then wrap this array into a `CBHttpMultiCall` and `exec()` it
+- After all calls are executed, you're ready to retrieve your responses through `getResponseMessages()`
+
+Here's an example:
+
+```php
+//
+// Prepare the list of calls. This is a dummy example hitting your localhost index file 100 times.
+//
+$calls = array();
+for ($i = 0; $i < 100; $i++) {
+
+	// Create the call. Set 1 second buffer for timeout
+	$calls[] = CBHttpMessageRequest::create('GET', 'http://localhost/')
+		->createCall()
+		->setTimeoutSeconds(2.0);
+}
+
+//
+// Perform the multi-call
+//
+$multiCall = new CBHttpMultiCallCurlParallel($calls);
+
+foreach ($multiCall->exec()->getResponseMessages() as $key=>$responseMessage) {
+	/* @var $responseMessage CBHttpMessageResponse */
+	$responseObject = $responseMessage->validateStatus()->getRawBody();
+
+	print($responseObject."\n");
+}
+
+print("All calls executed in ".$multiCall->getExecutionSeconds()." sec\n");
+
+```
