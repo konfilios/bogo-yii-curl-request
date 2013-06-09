@@ -129,6 +129,26 @@ class CBHttpMessageResponse extends CBHttpMessage
 	}
 
 	/**
+	 * True if status code is 4xx or 5xx.
+	 *
+	 * @return boolean
+	 */
+	public function hasErrorStatusCode()
+	{
+		return is_numeric($this->httpStatusCode) && ($this->httpStatusCode >= 400);
+	}
+
+	/**
+	 * True if status code is below 400.
+	 *
+	 * @return boolean
+	 */
+	public function hasSuccessfulStatusCode()
+	{
+		return intval($this->httpStatusCode) < 400;
+	}
+
+	/**
 	 * Throws exception on error status code.
 	 *
 	 * @return CBHttpMessageResponse
@@ -137,7 +157,7 @@ class CBHttpMessageResponse extends CBHttpMessage
 	public function validateStatus()
 	{
 		// Network operation succeeded but way may have an HTTP error
-		if (CBHttpStatusCode::isError($this->httpStatusCode)) {
+		if ($this->hasErrorStatusCode()) {
 			throw new CBHttpResponseException($this->httpReasonPhrase ?: CBHttpStatusCode::getMessageForCode($this->httpStatusCode), $this->httpStatusCode);
 		}
 
