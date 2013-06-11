@@ -29,21 +29,21 @@ class CBHttpMessageRequest extends CBHttpMessage
 	 *
 	 * @var string[]
 	 */
-	private $files;
+	private $files = array();
 
 	/**
 	 * HTTP GET parameters.
 	 *
 	 * @var string[]
 	 */
-	private $getParams;
+	private $getParams = array();
 
 	/**
 	 * HTTP POST parameters.
 	 *
 	 * @var string[]
 	 */
-	private $postParams;
+	private $postParams = array();
 
 	/**
 	 * User-defined fields.
