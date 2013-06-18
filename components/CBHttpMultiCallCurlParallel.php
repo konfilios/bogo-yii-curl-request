@@ -86,11 +86,18 @@ class CBHttpMultiCallCurlParallel extends CBHttpMultiCall
 				$execReturnValue = curl_multi_exec($multiHandle, $runningHandles);
 			} while ($execReturnValue == CURLM_CALL_MULTI_PERFORM);
 
+			// Check if any request is completed
 			// http://www.onlineaspect.com/2009/01/26/how-to-use-curl_multi-without-blocking/
 			if ($execReturnValue == CURLM_OK) {
-				// a request was just completed -- find out which one
 				while ($done = curl_multi_info_read($multiHandle)) {
+					// A request was just completed -- find out which one
 					$info = curl_getinfo($done['handle']);
+
+					$doneRequestKey = array_search($done['handle'], $curlHandles);
+
+//					if ($doneRequestKey !== false) {
+//						error_log('Request '.$doneRequestKey.' completed in '.$info['total_time'].' with status code '.$info['http_code'].'!');
+//					}
 
 //					if ($info['http_code'] == 200)  {
 //						$output = curl_multi_getcontent($done['handle']);
