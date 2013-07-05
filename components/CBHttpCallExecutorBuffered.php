@@ -1,22 +1,25 @@
 <?php
 /**
- * Buffered call executor.
+ * Buffered http call executor.
  *
- * <h2>Usage:</h2>
+ * A buffered executor maintains an internal, finite-size buffer of submitted calls. Every time
+ * you submit() a call for execution, one of the following may happen:
+ *
  * <ul>
- * <li>Create a buffered executor with a given buffer size.</li>
- * <li>Start adding calls to be executed using submit().</li>
- * <li>Whenever enough calls have been accumulated, submit() internally calls invokeAll()
- * to execute the calls using a CBHttpMultiCall.</li>
+ * <li>If the buffer is full, concurrent execution of all buffered calls starts and submit()
+ * returns when all calls are completed.</li>
+ *
+ * <li> If the buffer is not full, the submitted call is appended to the buffer.</li>
  * </ul>
  *
- * You may call invokeAll() manually to make sure no calls have been submitted but not executed.
+ * To avoid leaving submitted calls unexecuted follow the usage guidelines explained in
+ * CBHttpCallExecutor.
  *
  * @since 2.0
  * @package Components
  * @author Konstantinos Filios <konfilios@gmail.com>
  */
-class CBHttpCallExecutorBuffered extends CComponent
+class CBHttpCallExecutorBuffered extends CBHttpCallExecutor
 {
 	/**
 	 * Number of calls to buffer before invokeAll().
@@ -28,23 +31,9 @@ class CBHttpCallExecutorBuffered extends CComponent
 	/**
 	 * Buffer of submit()ed calls.
 	 *
-	 * @var CBHttpCallCurl[]
+	 * @var CBHttpCall[]
 	 */
 	private $bufferedCalls = array();
-
-	/**
-	 * Total number of calls executed.
-	 *
-	 * @var integer
-	 */
-	private $totalExecutedCallCount = 0;
-
-	/**
-	 * Total time spent in call execution (in seconds).
-	 *
-	 * @var float
-	 */
-	private $totalCallExecutionSeconds = 0.0;
 
 	/**
 	 * Construct new buffered executor.
@@ -61,10 +50,10 @@ class CBHttpCallExecutorBuffered extends CComponent
 	 *
 	 * If capacity of buffer has been reached, invokeAll() is called.
 	 *
-	 * @param CBHttpCallCurl $call Call to be executed.
+	 * @param CBHttpCall $call Call to be executed.
 	 * @return CBHttpCall[] List of completed calls.
 	 */
-	public function submit(CBHttpCallCurl $call)
+	public function submit(CBHttpCall $call)
 	{
 		// Create call and push to queue
 		$this->bufferedCalls[] = $call;
@@ -109,8 +98,8 @@ class CBHttpCallExecutorBuffered extends CComponent
 		}
 
 		// Keep statistics
-		$this->totalExecutedCallCount += count($this->bufferedCalls);
-		$this->totalCallExecutionSeconds += $multiCall->getExecutionSeconds();
+		$this->incrementTotalExecutedCallCount(count($this->bufferedCalls));
+		$this->incrementTotalCallExecutionSeconds($multiCall->getExecutionSeconds());
 
 		// Reset buffer
 		$this->bufferedCalls = array();
@@ -121,65 +110,5 @@ class CBHttpCallExecutorBuffered extends CComponent
 		}
 
 		return $executedCalls;
-	}
-
-	/**
-	 * Mean number of calls executed per second.
-	 *
-	 * @return float
-	 */
-	public function getMeanThroughput()
-	{
-		return $this->totalCallExecutionSeconds ? $this->totalExecutedCallCount / $this->totalCallExecutionSeconds : 0;
-	}
-
-	/**
-	 * Total number of calls executed.
-	 *
-	 * @return integer
-	 */
-	public function getTotalExecutedCallCount()
-	{
-		return $this->totalExecutedCallCount;
-	}
-
-	/**
-	 * Total time spent in call execution (in seconds).
-	 *
-	 * @return float
-	 */
-	public function getTotalCallExecutionSeconds()
-	{
-		return $this->totalCallExecutionSeconds;
-	}
-
-	/**
-	 * Called before invokeAll runs on a non-empty call buffer.
-	 *
-	 * @param CEvent $event
-	 */
-	public function onBeforeInvokeAll(CEvent $event)
-	{
-		$this->raiseEvent('onBeforeInvokeAll', $event);
-	}
-
-	/**
-	 * Called after invokeAll runs on a non-empty call buffer.
-	 *
-	 * @param CEvent $event
-	 */
-	public function onAfterInvokeAll(CEvent $event)
-	{
-		$this->raiseEvent('onAfterInvokeAll', $event);
-	}
-
-	/**
-	 * Called after an individual call is completed.
-	 *
-	 * @param CBHttpCallEvent $event
-	 */
-	public function onAfterCompleteCall(CBHttpCallEvent $event)
-	{
-		$this->raiseEvent('onAfterCompleteCall', $event);
 	}
 }

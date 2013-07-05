@@ -2,6 +2,7 @@
 /**
  * Parallel cURL multi-call.
  *
+ * @todo Constructor should not require CBHttpCallCurl instances.
  * @since 2.0
  * @package Components
  * @author Konstantinos Filios <konfilios@gmail.com>
