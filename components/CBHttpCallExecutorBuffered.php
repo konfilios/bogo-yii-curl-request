@@ -61,8 +61,8 @@ class CBHttpCallExecutorBuffered extends CComponent
 	 *
 	 * If capacity of buffer has been reached, invokeAll() is called.
 	 *
-	 * @param CBHttpCallCurl $call
-	 * @return CBHttpCall[] List of executed calls.
+	 * @param CBHttpCallCurl $call Call to be executed.
+	 * @return CBHttpCall[] List of completed calls.
 	 */
 	public function submit(CBHttpCallCurl $call)
 	{
@@ -81,7 +81,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 	 *
 	 * Buffered calls are executed concurrently using a CBHttpMultiCallCurlParallel.
 	 *
-	 * @return CBHttpCall[] List of executed calls.
+	 * @return CBHttpCall[] List of completed calls.
 	 */
 	public function invokeAll()
 	{
@@ -89,6 +89,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 			return array();
 		}
 
+		// Trigger events
 		if ($this->hasEventHandler('onBeforeInvokeAll')) {
 			$this->onBeforeInvokeAll(new CEvent($this));
 		}
@@ -99,16 +100,11 @@ class CBHttpCallExecutorBuffered extends CComponent
 
 		$executedCalls = $multiCall->exec()->getCalls();
 
-		if ($this->hasEventHandler('onCallCompleted')) {
-			$onCallCompletedEvent = new CEvent($this);
-			$onCallCompletedEvent->params = array();
-
+		// Trigger events
+		if ($this->hasEventHandler('onAfterCompleteCall')) {
 			foreach ($executedCalls as $call) {
 				/* @var $call CBHttpCall */
-
-				$onCallCompletedEvent->params['call'] = $call;
-
-				$this->onCallCompleted($onCallCompletedEvent);
+				$this->onAfterCompleteCall(new CBHttpCallEvent($this, null, $call));
 			}
 		}
 
@@ -116,9 +112,10 @@ class CBHttpCallExecutorBuffered extends CComponent
 		$this->totalExecutedCallCount += count($this->bufferedCalls);
 		$this->totalCallExecutionSeconds += $multiCall->getExecutionSeconds();
 
-		// Reset queue
+		// Reset buffer
 		$this->bufferedCalls = array();
 
+		// Trigger events
 		if ($this->hasEventHandler('onAfterInvokeAll')) {
 			$this->onAfterInvokeAll(new CEvent($this));
 		}
@@ -157,7 +154,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 	}
 
 	/**
-	 * Called before a non-empty queue is flushed.
+	 * Called before invokeAll runs on a non-empty call buffer.
 	 *
 	 * @param CEvent $event
 	 */
@@ -167,7 +164,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 	}
 
 	/**
-	 * Called after a non-empty queue is flushed.
+	 * Called after invokeAll runs on a non-empty call buffer.
 	 *
 	 * @param CEvent $event
 	 */
@@ -179,12 +176,10 @@ class CBHttpCallExecutorBuffered extends CComponent
 	/**
 	 * Called after an individual call is completed.
 	 *
-	 * Event parameters include the 'responseMessage' and the corresponding 'notification'.
-	 *
-	 * @param CEvent $event
+	 * @param CBHttpCallEvent $event
 	 */
-	public function onCallCompleted(CEvent $event)
+	public function onAfterCompleteCall(CBHttpCallEvent $event)
 	{
-		$this->raiseEvent('onCallCompleted', $event);
+		$this->raiseEvent('onAfterCompleteCall', $event);
 	}
 }
