@@ -13,7 +13,7 @@
  * @package Components
  * @author Konstantinos Filios <konfilios@gmail.com>
  */
-abstract class CBHttpCallExecutorBuffered extends CComponent
+class CBHttpCallExecutorBuffered extends CComponent
 {
 	/**
 	 * Number of calls to buffer before invokeAll().
