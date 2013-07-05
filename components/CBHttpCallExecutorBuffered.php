@@ -3,9 +3,12 @@
  * Buffered call executor.
  *
  * <h2>Usage:</h2>
- * Create a buffered executor with a given buffer size. Then start adding calls to be executed
- * using submit(). Whenever enough calls have been accumulated, submit() internally calls invokeAll()
- * to execute the calls using a MultiCall.
+ * <ul>
+ * <li>Create a buffered executor with a given buffer size.</li>
+ * <li>Start adding calls to be executed using submit().</li>
+ * <li>Whenever enough calls have been accumulated, submit() internally calls invokeAll()
+ * to execute the calls using a CBHttpMultiCall.</li>
+ * </ul>
  *
  * You may call invokeAll() manually to make sure no calls have been submitted but not executed.
  *
@@ -27,7 +30,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 	 *
 	 * @var CBHttpCallCurl[]
 	 */
-	private $calls = array();
+	private $bufferedCalls = array();
 
 	/**
 	 * Total number of calls executed.
@@ -64,9 +67,9 @@ class CBHttpCallExecutorBuffered extends CComponent
 	public function submit(CBHttpCallCurl $call)
 	{
 		// Create call and push to queue
-		$this->calls[] = $call;
+		$this->bufferedCalls[] = $call;
 
-		if (count($this->calls) >= $this->bufferSize) {
+		if (count($this->bufferedCalls) >= $this->bufferSize) {
 			return $this->invokeAll();
 		} else {
 			return array();
@@ -82,7 +85,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 	 */
 	public function invokeAll()
 	{
-		if (empty($this->calls)) {
+		if (empty($this->bufferedCalls)) {
 			return array();
 		}
 
@@ -91,7 +94,7 @@ class CBHttpCallExecutorBuffered extends CComponent
 		}
 
 		// Create multi-call
-		$multiCall = new CBHttpMultiCallCurlParallel($this->calls);
+		$multiCall = new CBHttpMultiCallCurlParallel($this->bufferedCalls);
 		/* @var $multiCall CBHttpMultiCallCurlParallel */
 
 		$executedCalls = $multiCall->exec()->getCalls();
@@ -110,11 +113,11 @@ class CBHttpCallExecutorBuffered extends CComponent
 		}
 
 		// Keep statistics
-		$this->totalExecutedCallCount += count($this->calls);
+		$this->totalExecutedCallCount += count($this->bufferedCalls);
 		$this->totalCallExecutionSeconds += $multiCall->getExecutionSeconds();
 
 		// Reset queue
-		$this->calls = array();
+		$this->bufferedCalls = array();
 
 		if ($this->hasEventHandler('onAfterInvokeAll')) {
 			$this->onAfterInvokeAll(new CEvent($this));
