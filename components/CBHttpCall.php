@@ -327,4 +327,13 @@ abstract class CBHttpCall
 	 * @return mixed
 	 */
 	abstract public function getDebugInfo();
+
+	/**
+	 * Returns true if call is completed and failed.
+	 *
+	 * If a call has failed you can call getErrorCode() and getErrorMessage() for error details.
+	 *
+	 * @return boolean
+	 */
+	abstract public function getHasFailed();
 }

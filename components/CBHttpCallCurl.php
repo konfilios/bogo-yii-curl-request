@@ -249,4 +249,16 @@ class CBHttpCallCurl extends CBHttpCall
 	{
 		return $this->curlVerboseInfo;
 	}
+
+	/**
+	 * Returns true if call is completed and failed.
+	 *
+	 * If a call has failed you can call getErrorCode() and getErrorMessage() for error details.
+	 *
+	 * @return boolean
+	 */
+	public function getHasFailed()
+	{
+		return ($this->errorCode != 0);
+	}
 }
