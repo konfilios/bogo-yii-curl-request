@@ -210,9 +210,10 @@ class CBHttpCallCurl extends CBHttpCall
 	/**
 	 * Executes request message and returns response message.
 	 *
+	 * @param boolean $throwExceptionOnFailure If true an exception is thrown on network error.
 	 * @return CBHttpMessageResponse
 	 */
-	public function exec()
+	public function exec($throwExceptionOnFailure = false)
 	{
 		// Initialize curl
 		$ch = $this->curlInit();
@@ -223,18 +224,8 @@ class CBHttpCallCurl extends CBHttpCall
 		// Everything cool
 		$this->curlClose($ch);
 
-		// Network error
-		if (!$this->responseMessage->hasRawBody()) {
-			// WRITEFUNCTION did not return any content. Probably an error
-			if ($curlReturnValue === false) {
-				throw new CBHttpCallException($this->errorMessage, $this->errorCode);
-			}
-		} else {
-			// WRITEFUNCTION returned content. So far so good.
-//			if ($curlReturnValue === false) {
-				// Returned data is false. Probably some ill-formed server response, i.e.
-				// Content-length missing or bad "Transfer-encoding: chunked" response.
-//			}
+		if ($throwExceptionOnFailure && $this->getHasFailed()) {
+			throw new CBHttpCallException($this->errorMessage, $this->errorCode);
 		}
 
 		return $this->responseMessage;

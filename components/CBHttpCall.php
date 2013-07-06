@@ -314,9 +314,10 @@ abstract class CBHttpCall
 	/**
 	 * Executes request message and returns response message.
 	 *
-	 * @return CBHttpMessageResponse
+	 * @param boolean $throwExceptionOnFailure If true an exception is thrown on network error.
+	 * @return CBHttpMessageResponse Response message or null if a network error occured.
 	 */
-	abstract public function exec();
+	abstract public function exec($throwExceptionOnFailure = false);
 
 	/**
 	 * Returns extra debug info about call.
