@@ -56,14 +56,14 @@ abstract class CBHttpCallExecutor extends CComponent
 	 * @param CBHttpCall $call Call to be executed.
 	 * @return CBHttpCall[] List of completed calls.
 	 */
-	public function submit(CBHttpCall $call);
+	abstract public function submit(CBHttpCall $call);
 
 	/**
 	 * Invoke all pending submitted calls.
 	 *
 	 * @return CBHttpCall[] List of completed calls.
 	 */
-	public function invokeAll();
+	abstract public function invokeAll();
 
 	/**
 	 * Increment call count.
