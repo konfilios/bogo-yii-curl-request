@@ -200,9 +200,6 @@ class CBHttpCallCurl extends CBHttpCall
 			fclose($this->curlVerboseFile);
 		}
 
-		$this->errorMessage = curl_error($ch);
-		$this->errorCode = curl_errno($ch);
-
 		curl_close($ch);
 	}
 
@@ -221,11 +218,14 @@ class CBHttpCallCurl extends CBHttpCall
 		// Execute the HTTP request
 		$curlReturnValue = curl_exec($ch);
 
+		$this->setErrorMessage(curl_error($ch));
+		$this->setErrorCode(curl_errno($ch));
+
 		// Everything cool
 		$this->curlClose($ch);
 
 		if ($throwExceptionOnFailure && $this->getHasFailed()) {
-			throw new CBHttpCallException($this->errorMessage, $this->errorCode);
+			throw new CBHttpCallException($this->getErrorMessage(), $this->getErrorCode());
 		}
 
 		return $this->responseMessage;
@@ -250,6 +250,6 @@ class CBHttpCallCurl extends CBHttpCall
 	 */
 	public function getHasFailed()
 	{
-		return ($this->errorCode != 0);
+		return ($this->getErrorCode() != 0);
 	}
 }

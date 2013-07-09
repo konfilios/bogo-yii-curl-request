@@ -88,14 +88,14 @@ abstract class CBHttpCall
 	 *
 	 * @var integer
 	 */
-	protected $errorCode = 0;
+	private $errorCode = 0;
 
 	/**
 	 * Message of execution error.
 	 *
 	 * @var string
 	 */
-	protected $errorMessage = '';
+	private $errorMessage = '';
 
 	/**
 	 * Request message.
@@ -114,6 +114,26 @@ abstract class CBHttpCall
 	/**
 	 * Code of execution error.
 	 *
+	 * @param integer $errorCode
+	 */
+	public function setErrorCode($errorCode)
+	{
+		$this->errorCode = $errorCode;
+	}
+
+	/**
+	 * Message of execution error.
+	 *
+	 * @param string $errorMessage
+	 */
+	public function setErrorMessage($errorMessage)
+	{
+		$this->errorMessage = $errorMessage;
+	}
+
+	/**
+	 * Code of execution error.
+	 *
 	 * @return integer
 	 */
 	public function getErrorCode()
@@ -124,7 +144,7 @@ abstract class CBHttpCall
 	/**
 	 * Message of execution error.
 	 *
-	 * @var string
+	 * @return string
 	 */
 	public function getErrorMessage()
 	{
