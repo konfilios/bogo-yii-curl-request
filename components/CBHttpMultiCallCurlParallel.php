@@ -92,48 +92,24 @@ class CBHttpMultiCallCurlParallel extends CBHttpMultiCall
 			if ($execReturnValue == CURLM_OK) {
 				while ($done = curl_multi_info_read($multiHandle)) {
 					// A request was just completed -- find out which one
-					$info = curl_getinfo($done['handle']);
+//					$info = curl_getinfo($done['handle']);
 
 					$doneRequestKey = array_search($done['handle'], $curlHandles);
+					$curlCall = $calls[$doneRequestKey];
 
-//					if ($doneRequestKey !== false) {
-//						error_log('Request '.$doneRequestKey.' completed in '.$info['total_time'].' with status code '.$info['http_code'].'!');
-//					}
+					// Set error info. errno() does not work so we use $done['result'] :(
+					$curlCall->setErrorCode($done['result']);
+					$curlCall->setErrorMessage(curl_error($done['handle']));
 
-//					if ($info['http_code'] == 200)  {
-//						$output = curl_multi_getcontent($done['handle']);
-//
-//						// request successful.  process output using the callback function.
-//						$callback($output);
-//
-//						// start a new request (it's important to do this before removing the old one)
-//						$ch = curl_init();
-//						$options[CURLOPT_URL] = $urls[$i++];  // increment i
-//						curl_setopt_array($ch,$options);
-//						curl_multi_add_handle($master, $ch);
-//
-//						// remove the curl handle that just completed
-//						curl_multi_remove_handle($master, $done['handle']);
-//					} else {
-//						// request failed.  add error handling.
-//					}
+					// Remove the handle
+					curl_multi_remove_handle($multiHandle, $done['handle']);
+
+					// Close it
+					$curlCall->curlClose($done['handle']);
 				}
 			}
 		}
 		$this->stopTimer();
-
-		//
-		// Clean-up
-		//
-		foreach ($calls as $key => $curlCall) {
-			/* @var $curlCall CBHttpCallCurl */
-
-			// Remove the handle
-			curl_multi_remove_handle($multiHandle, $curlHandles[$key]);
-
-			// Close it
-			$curlCall->curlClose($curlHandles[$key]);
-		}
 
 		// Clean up the curl_multi handle
 		curl_multi_close($multiHandle);
